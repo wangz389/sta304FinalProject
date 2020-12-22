@@ -1,0 +1,117 @@
+---
+title: "final project"
+author: Zilin Wang 1003932916
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(dplyr)
+```
+
+```{r cars,include=FALSE,message=FALSE,echo=FALSE}
+data<-read.csv("C:\\Users\\yuuuuuuki\\Desktop\\dataAnyasis\\project\\ramen\\ramen-ratings.csv")
+```
+
+The pace of life in metropolis is getting faster and faster, and people's time is becoming more and more precious. Therefore, instant noodles become a delicious and convenient way to solve people's food problems. However, as time goes on, instant noodles have gradually become a part of people's lifestyle. The purpose of eating instant noodles has changed from saving time to enjoying delicious food. In this project, I will explore some fact about Ramen! which Country is the King of Ramen? what flavor of Ramen is most popular? Can I come up with a regression model about Ramen?
+
+I downloaded a dataset from kaggle, which collected data about 2580 kinds of instant noodles in the world. There are five variables. "Review", the total number of reviews. "Brand", the brand of instant noodles, "country", the country where the instant noodles are produced. " Style, "barrel or bag." Stars ", the rating of this instant noodle.
+
+##Which country is the King of Ramen?
+In 2580 kinds of ramen, according to the number of ramen each country have, from large to small, we got the top ten countries! They are Japan,USA,South Korea, TaiWan,Thailand,China,Malaysia,Hong Kong, Indonesia,Singapore.
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+#how many types of Ramen per country?
+#Top ten country 
+numberBrand<-data%>%
+  group_by(Country)%>%
+  summarise(brandPerCountry=n())%>%arrange(by_group=T,desc(brandPerCountry))
+numberBrand[c(1:10),]
+```
+I calculated 0.75quantity of "stars" variable, and the result was 4.25. I calculated the number of ramen with a score above 4.25 in each country with baseline 4.25, arrenging from highest to lowest.The top ten countries are Japan,Malaysia,South Korea,TaiWan,USA,indonesia,singapore,Hong Kong,China,Thailand.
+
+From above I can conclude,in terms of quality and quantity, Japan is the king of ramen!
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+#which country's Ramen are most popular!
+data<-data%>%filter(Stars!="Unrated")
+data$ranking<-as.numeric(data$Stars)
+data<-na.omit(data)
+quantile(data$ranking,0.75) #0.75 quantile of "stars" variable
+counts<-data%>%
+  group_by(Country)%>%
+  summarise(n=sum(ranking>4.25))%>%arrange(group_by=T,desc(n))
+counts[c(1:10),]
+```
+
+##What is the most popular flavor of Ramen?
+From the variety variable, I extracted the 30 most frequent keywords, and select the words about flavor. These words are'chicken','beef','pork','seafood','shrimp','spicy','hot','mi',tom yum‘
+
+I create a new variable called "flavour', storing the flavor of each Ramen.
+```{r,echo=FALSE}
+data<-data%>%mutate(chicken=ifelse(grepl('Chicken',data$Variety),1,0))%>%
+   mutate(beef=ifelse(grepl('Beef',data$Variety),1,0))%>%
+   mutate(shrimp=ifelse(grepl('Shrimp',data$Variety),1,0))%>%
+   mutate(seafood=ifelse(grepl('Seafood',data$Variety),1,0))%>%
+  mutate(pork=ifelse(grepl('Pork',data$Variety),1,0))%>%
+  mutate(curry=ifelse(grepl('Curry',data$Variety),1,0))%>%
+   mutate(spicy=ifelse(grepl('Spicy',data$Variety),1,0))%>%
+   mutate(hot=ifelse(grepl('Hot',data$Variety),1,0))%>%
+   mutate(mi=ifelse(grepl('Mi',data$Variety),1,0))%>%
+  mutate(tom=ifelse(grepl('Tom',data$Variety),1,0))
+
+ data<-data%>%mutate(flavour=case_when(data$beef==1~"beef",
+                               data$chicken==1~"chicken",
+                                data$pork==1~"pork",
+                                data$curry==1~"curry",
+                                data$mi==1~"mi",
+                                data$tom==1~"tom",
+                                data$hot==1~"hot",
+                              data$seafood==1~"seafood"))
+data<-na.omit(data)
+```
+
+
+```{r,warning=FALSE,message=FALSE,echo=FALSE}
+#extract some popular key words from "variety" variable
+mylist<-list(strsplit(data$Variety," "))#split whole sentence into single word
+mydf<-data.frame(x=unlist(mylist))
+mydf2<-data.frame(x=sub(")",'',mydf$x))
+mydf3<-data.frame(x=sub("\\(",'',mydf2$x))#remove "()"
+output<-mydf3%>%group_by(x)%>%summarise(n=n())%>%arrange(desc(n),by_group=T)
+topKeyWord<-output$x[1:30] #extract top 30 word with highest frequency
+topKeyWord
+```
+From this box plot, It seems that curry noodles are often rated highly. Seafood and shrimp along with chicken seem to be generally worse. Seeing as some rows also have secondary flavours, this could be a great predictor of ratings, along with country, style and brand.
+
+
+```{r,echo=FALSE}
+#which flavour is the most popular one!
+boxplot(ranking~flavour, data=data)
+```
+
+
+##A regression of Ramen
+I try to use all value in flavour variable to be predictors.However, I find some predictor's are not statistically significant, then I drop them.
+The model I get is 
+
+rankinghat=3.71466-0.356chicken-0.214beef-0.251pork+0.407curry-0.206hot
+
+the average ranking of ramen is 3.731.
+If the Ramen is Chicken flavor,the vaerage raking will decrease0.356.
+If the Ramen is beef flavor, the average ranking will decrease 0.214.
+If the Ramen is pork flavor. the average ranking will decrease 0.251.
+If the Ramen is curry flavor, the average ranking will increase 0.407.
+If the Ramen is hot flavor, the average ranking will decrease 0.206.
+
+the F test Pvalue and pvalue are really small. Therefore, I can conclude the model have some prediction ability.
+
+```{r,warning=FALSE,message=FALSE,echo=FALSE}
+attach(data)
+myModel<-lm(ranking~chicken+beef+pork+curry+hot)
+summary(myModel)
+```
+However, the R^2 is too low and the normality of error seems not hold. 
+Therefore, further steps are needed.
+
+
+
+
