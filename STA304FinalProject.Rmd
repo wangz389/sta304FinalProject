@@ -111,6 +111,10 @@ summary(myModel)
 ```
 However, the R^2 is too low and the normality of error seems not hold. 
 Therefore, further steps are needed.
+```{r}
+citation("tidyverse")
+```
+Bilogur, A. (2017). [A data set from kaggle about Ramen. uml:https://www.kaggle.com/residentmario/ramen-ratings]. Unpublished raw data.
 
 
 
